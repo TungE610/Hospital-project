@@ -54,7 +54,7 @@ const RegisterModal = (props) => {
 						} else {
 						}
 					} catch(error){
-						let response = await fetch(`https://hospital-project-api.herokuapp.com/api/room/min_wait/${values.examinate}`)
+						let response = await fetch(`https://hospital-project-api.herokuapp.com/api/room/min_wait/${values.examinate}`,{mode : 'cors'})
 						let jsonData = await response.json()
 						const body = {
 							specialty_id : values.examinate,
@@ -66,7 +66,8 @@ const RegisterModal = (props) => {
 						 response = await fetch(`https://hospital-project-api.herokuapp.com/api/registrations`, {
 							method : "POST",
 							headers : {"Content-Type" : "application/json"},
-							body : JSON.stringify(body)
+							body : JSON.stringify(body),
+							mode : 'cors'
 						})
 						failNotification()
 						console.log("error: ", error.message)
@@ -79,7 +80,8 @@ const RegisterModal = (props) => {
 			const response = await fetch("https://hospital-project-api.herokuapp.com/api/patients", {
 				method : "POST",
 				headers : {"Content-Type" : "application/json"},
-				body : JSON.stringify(body)
+				body : JSON.stringify(body),
+				mode : 'cors'
 			})
        
 		 } catch(error) {
