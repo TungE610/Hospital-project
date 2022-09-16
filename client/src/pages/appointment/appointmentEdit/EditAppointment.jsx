@@ -1,11 +1,11 @@
 import {React, useState, useEffect, useContext}from "react";
+import axios from 'axios'
 import styles from "./EditAppointment.module.css"
 import ContactRow from "../../../components/contactRow/ContactRow";
 import Navbar from "../../../components/navbar/Navbar";
-import { Input,Select,Button, Form,Modal,TimePicker } from 'antd'
+import { Input,Button, Form,Modal,TimePicker } from 'antd'
 import { useParams,useNavigate } from "react-router-dom";
 import RegisterModal from "../../../components/registerModal/RegisterModal";
-import moment from 'moment';
 
 const layout = {
   labelCol: {
@@ -21,45 +21,47 @@ const EditAppointments = () => {
 	const [isModalVisible, setIsModalVisible] = useState(false)
 	const [loading, setLoading] = useState(false);
 	const [appointmentData, setAppointmentData] = useState({})
-	const [expectedTime, setExpectedTime] = useState('')
 	let { appointment_id } = useParams();
 	const [form] = Form.useForm();
   const navigate = useNavigate()
+	const baseUrl = 'https://hospital-project-api.herokuapp.com/api'
+
 	const fetchAppointment = async () => {
 		setLoading(true)
 		try {
-			const response = await fetch(`https://hospital-project-api.herokuapp.com/api/appointments/${appointment_id}`)
-			const jsonData = await response.json()
-			setAppointmentData(jsonData)
-			console.log(jsonData)
-			setLoading(false)
+			axios(`${baseUrl}/appointments/${appointment_id}`).then(response => {
+				setAppointmentData(response.data)
+				setLoading(false)
+			});
 		}catch(error){
 			console.log(error.message)
 		}
-	}
+	};
+
 	const toggleModalHandler = (state) => {
 		setIsModalVisible(state)
-  }
+  };
+
 	const onFinish = async (values) => {
 		setLoading(true)
-		const body = {diagnosis : values.diagnosis, expected_time : expectedTime}
+		const body = {diagnosis : values.diagnosis}
 		console.log("body:",body)
-		const response = await fetch(`https://hospital-project-api.herokuapp.com/api/appointments/${appointment_id}`, {
-			method : "POST",
-			headers : {"Content-Type" : "application/json"},
-			body : JSON.stringify(body),
-			mode: 'cors'
+		await axios.post(`${baseUrl}/appointments/${appointment_id}`, body)
+		.then(response => {
+			console.log(response)
 		})
+		.catch(error => 
+			console.log(error)
+		);
 		setLoading(false)
-		console.log("den day r")
+		localStorage.setItem('edited','true')
 		navigate('/Appointments')
   };
+
   useEffect(() => {
     fetchAppointment()
 	}, [])
-const pickExpectedTimeHandler = (time,timeString) => {
-	setExpectedTime(timeString)
-}
+
 	return (
 		<div className ="edit-appointment">
 			<RegisterModal isModalVisible={isModalVisible} toggleModal={toggleModalHandler}/>
@@ -90,18 +92,15 @@ const pickExpectedTimeHandler = (time,timeString) => {
       </Form.Item>
       <Form.Item
         name={"room_id"}
-        label="Room Id"
+        label="Room"
       >
 				<p className={styles.formInfo}>{appointmentData.room_id}</p>
       </Form.Item>
       <Form.Item
         name={"patient_id"}
-        label="Patient Id"
+        label="Patient"
       >
 				<p className={styles.formInfo}>{appointmentData.patient_id}</p>
-      </Form.Item>
-			<Form.Item  name={"expected_time"} label="Expected Time">
-					<TimePicker onChange={pickExpectedTimeHandler} defaultOpenValue={moment('00:00:00', 'HH:mm:ss')} />
       </Form.Item>
       <Form.Item  name={"diagnosis"} label="Diagnosis">
         <Input.TextArea showCount maxLength={100} size={"large"}/>

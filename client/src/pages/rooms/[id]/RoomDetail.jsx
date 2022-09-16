@@ -1,26 +1,29 @@
 import React, {useState, useEffect} from "react";
+import axios from 'axios'
 import styles from './RoomDetail.module.css'
 import ContactRow from "../../../components/contactRow/ContactRow";
 import Navbar from "../../../components/navbar/Navbar";
 import RegisterModal from "../../../components/registerModal/RegisterModal";
 import { Table, Tag } from 'antd'
 import { useParams } from "react-router-dom";
-
+import NotificationBox from "../../../components/notificationBox/Notification";
 
 const RoomDetail = () => {
 	const [doctorData, setDoctorData] = useState([])
 	const [isModalVisible, setIsModalVisible] = useState(false)
   const { roomId } = useParams();
+	const baseUrl = 'https://hospital-project-api.herokuapp.com/api'
+
 	const toggleModalHandler = (state) => {
 		setIsModalVisible(state)
   }
 	const getDoctors = async () => {
 		try {
-			const response = await fetch(`https://hospital-project-api.herokuapp.com/api/rooms/${roomId}`, {mode : 'cors'})
-			const jsonData = await response.json()
-			setDoctorData(jsonData)
+			await axios(`${baseUrl}/rooms/${roomId}`).then(response => {
+				setDoctorData(response.data)
+			})
 		} catch(error){
-			console.log(error.message)
+			console.log(error)
 		}
 }
 useEffect(() => {
@@ -86,6 +89,7 @@ useEffect(() => {
 				columns={columns} 
 				dataSource={doctorData}         
 		/>
+		<NotificationBox />
 		</div>
 		)
 

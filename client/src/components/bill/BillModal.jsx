@@ -1,8 +1,8 @@
 import React,{useState, useRef, useCallback, useEffect} from "react";
 import styles from './BillModal.module.css'
-import { Modal, Form, Input, Select, notification, InputNumber,Space} from "antd";
+import axios from 'axios'
+import { Modal, Form, Input, Select, notification,Space} from "antd";
 import 'antd/dist/antd.css';
-import { useParams, useNavigate } from "react-router-dom";
 
 
 
@@ -12,16 +12,16 @@ const BillModal = (props) => {
 	const [medicineFee, setMedicineFee] = useState(0)
 	const [medical, setMedical] = useState([])
 	const [totalFee, setTotalFee] = useState(0)
+	const baseUrl = 'https://hospital-project-api.herokuapp.com/api'
 	const { Option } = Select;
 	const [medical1,setMedical1] = useState('heroin')
 	const [medical2,setMedical2] = useState('heroin')
 	const [medical3,setMedical3] = useState('heroin')
   
-	console.log('props: ', props)
 	const selectMedical1Handler = (value) => {
 			setMedical1(value)
 	}
-	  
+	  console.log("medical: ", medical)
 	const selectMedical2Handler = (value) => {
 			setMedical2(value)
 	}
@@ -36,12 +36,12 @@ const BillModal = (props) => {
 
 	const getMedical = async () => {
 		   try {
-				const response = await fetch('https://hospital-project-api.herokuapp.com/api/medicals', {	mode: 'cors' })
-				const jsonData = await response.json()
-				const medicalData = jsonData.map(element => {
-					return {...element,selectedQuantity : 0}
+				axios(`${baseUrl}/medicals`).then(response => {
+					const medicalData = response.data.map(element => {
+						return {...element,selectedQuantity : 0}
+					})
+					setMedical(medicalData)			 
 				})
-				setMedical(medicalData)			 
 			 }catch(error) {
 					console.log(error.message)
 			 }
@@ -49,6 +49,7 @@ const BillModal = (props) => {
 	useEffect(() => {
 		getMedical()
 	}, [])
+
 	const  onSubmit = async () => {
 				try {
 					let body = {
@@ -59,14 +60,15 @@ const BillModal = (props) => {
 						medicine_fee : medicineFee,
 						discounted_charges : props.status_insurance === true ? totalFee  : 0,
 						total_charges : totalFee,
-
+						date_time :     new Date().toLocaleString(),
 					}
-					let response = await fetch('https://hospital-project-api.herokuapp.com/api/bills', {
-						method : "POST",
-						headers : {"Content-Type" : "application/json"},
-						body : JSON.stringify(body),
-						mode: 'cors'
+					axios.post(`${baseUrl}/bills`, body)
+					.then(response => {
+						console.log(response)
 					})
+					.catch(error => 
+						console.log(error)
+					);
 
 					const medicalbody = medical.map(element => {
 						if(element.selectedQuantity > 0) {
@@ -79,27 +81,33 @@ const BillModal = (props) => {
 							return null
 						}
 					})
+					console.log("medicalbody: ", medicalbody)
 					medicalbody.forEach(async (element) => {
-						if (element)
-						 response = await fetch('https://hospital-project-api.herokuapp.com/api/medicines', {
-							method : "POST",
-							headers : {"Content-Type" : "application/json"},
-							body : JSON.stringify(element),
-							mode: 'cors'
-						})
+						if (element) 
+						{
+							axios.post(`${baseUrl}/medicines`, element)
+							.then(response => {
+								console.log(response)
+							})
+							.catch(error => 
+								console.log(error)
+							);
+						}
 					})
 					body = {
-						end_time : new Date().toLocaleTimeString()
+						end_time : new Date().toLocaleTimeString('it-IT')
 					}
-					response = await fetch(`https://hospital-project-api.herokuapp.com/api/appointments/end_up/${props.appointment_id}`, {
-						method : "POST",
-						headers : {"Content-Type" : "application/json"},
-						body : JSON.stringify(body),
-						mode: 'cors'
+					axios.post(`${baseUrl}/appointments/end_up/${props.appointment_id}`, body)
+					.then(response => {
+						console.log(response)
 					})
+					.catch(error => 
+						console.log(error)
+					);
 					closePopup()
+					successNotification()
 				}catch (error) {
-					console.log(error.message)
+					console.log(error)
 				}
 		};
 
@@ -108,7 +116,7 @@ const BillModal = (props) => {
 			notification["success"]({
 				message: 'SUCCESSFULL',
 				description:
-					`You have just successfully registered.Your  !!`,
+					`You have just successfully make a bill and end up appointment!!`,
 			});
 		};
 	
@@ -120,7 +128,7 @@ const BillModal = (props) => {
 			});
 		};
 	 const getExaminationFeeHandler = (e) => {
-			setExaminationFee(e.target.value)
+			setExaminationFee(parseInt(e.target.value))
 		}	 
 	 useEffect(() => {
 		setTotalFee(parseInt(examinationFee) + parseInt(medicineFee))
@@ -142,6 +150,7 @@ const BillModal = (props) => {
 		medical.forEach(element => {
 			medicine_fee = medicine_fee + Number(element.cost.replace(/[^0-9.-]+/g,"")) * element.selectedQuantity
 		})
+		console.log("medicine_fee: ", medicine_fee)
 		setMedicineFee(medicine_fee)
 	}
 	 useEffect(() => {
@@ -194,7 +203,7 @@ const BillModal = (props) => {
 						<div className={styles.medicalCard}>
 						<Select
 							style={{
-								width: 120,
+								width: 400,
 							}}
 							onChange={selectMedical1Handler}
 						>
@@ -205,7 +214,7 @@ const BillModal = (props) => {
 							})}
 						</Select>
 						  <div style={{lineHeight:"31px"}}>{` x `}</div>
-							<Input size="small" min={1} max={100} defaultValue={1} onChange={(e) => {
+							<Input size="small" min={1} max={100} defaultValue={0} onChange={(e) => {
 								if(e.target.value) {
 									selectedQuantityHandler(e.target.value,medical1)
 								} else {
@@ -219,7 +228,7 @@ const BillModal = (props) => {
 						<div className={styles.medicalCard}>
 						<Select
 							style={{
-								width: 120,
+								width: 400,
 							}}
 							onChange={selectMedical2Handler}
 						>
@@ -244,7 +253,7 @@ const BillModal = (props) => {
 						<div className={styles.medicalCard}>
 						<Select
 							style={{
-								width: 120,
+								width: 400,
 							}}
 							onChange={selectMedical3Handler}
 						>
@@ -255,7 +264,7 @@ const BillModal = (props) => {
 							})}
 						</Select>
 						  <div style={{lineHeight:"31px"}}>{` x `}</div>
-							<Input size="small" min={1} max={100} defaultValue={1} onChange={(e) => {
+							<Input size="small" min={1} max={100} defaultValue={0} onChange={(e) => {
 									if(e.target.value) {
 											selectedQuantityHandler(e.target.value,medical3)
 									} else {

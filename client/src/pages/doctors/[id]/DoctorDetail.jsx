@@ -6,6 +6,8 @@ import RegisterModal from "../../../components/registerModal/RegisterModal";
 import { Card } from 'antd'
 import { useParams } from "react-router-dom";
 import { scroller } from "react-scroll";
+import NotificationBox from "../../../components/notificationBox/Notification";
+
 const { Meta } = Card;
 
 const DoctorDetail = () => {
@@ -19,7 +21,7 @@ const DoctorDetail = () => {
   }
 	const getDoctor = async () => {
 		try {
-			const response = await fetch(`http://localhost:5000/doctors/${doctorId}`)
+			const response = await fetch(`https://hospital-project-api.herokuapp.com/api/doctors/${doctorId}`,{mode : 'cors'})
 			const jsonData = await response.json()
 			setDoctorData(jsonData)
 		} catch(error){
@@ -57,7 +59,7 @@ useEffect(() => {
   			>
     <Meta title={doctorData.doctor_name} description="www.instagram.com" id="19"/>
   </Card>
-
+		<NotificationBox />
 		</div>
 	)
 }

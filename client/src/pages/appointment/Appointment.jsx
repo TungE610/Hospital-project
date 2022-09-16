@@ -1,14 +1,14 @@
 import {React, Fragment, useState, useEffect, useContext}from "react";
+import axios from 'axios'
 import styles from "./Appointment.module.css"
 import ContactRow from "../../components/contactRow/ContactRow";
 import Navbar from "../../components/navbar/Navbar";
 import { Table, Tag, Input,Select,Button, Tooltip, Space,Modal,notification } from 'antd'
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import RegisterModal from "../../components/registerModal/RegisterModal";
 import { SearchOutlined, EditTwoTone, DeleteTwoTone, SendOutlined } from '@ant-design/icons'
 import LogginContext from '../../components/accountBox/LogginContext'
 import BillModal from "../../components/bill/BillModal";
-import { copyFileSync } from "fs";
 
 const Appointments = (props) => {
   const [appointmentData, setAppointmentData] = useState([])
@@ -23,37 +23,56 @@ const Appointments = (props) => {
 	const [status_of_insurance, setStatus_of_insurance] = useState(false)
 	const [doctorStatus, setDoctorStatus] = useState(false)
 	const [typeSee, setTypeSee] = useState(true)
+	const [sent, setSent] = useState(false)
+	const [edited, setEdited] = useState(false)
+	const baseUrl = 'https://hospital-project-api.herokuapp.com/api'
+
+	const location = useLocation();
 	const navigate = useNavigate();
 	const { Option } = Select;
-
+	let tempAppointmentData
 	const toggleModalHandler = (state) => {
 		setIsModalVisible(state)
   }
   const getAppointments = async () => {
 		setLoading(true)
 			try {
-				const response = await fetch("https://hospital-project-api.herokuapp.com/api/appointments", {mode : 'cors'})
-				const jsonData = await response.json()
-				setAppointmentData(jsonData)
-				setLoading(false)
+				await axios(`${baseUrl}/appointments`).then(response => {
+					const transformedData =  response.data.map(appointment => {
+						return {...appointment, 
+							diagnosis: (appointment.diagnosis !== null ? appointment.diagnosis : "in progess"),
+						}
+					})
+					const index = transformedData.findIndex(element => element.doctor_id === sessionStorage.getItem('doctor_id'))
+					if(index >= 0) {
+						tempAppointmentData = transformedData.slice()
+						let temp  = JSON.parse(JSON.stringify(tempAppointmentData[0]));
+						tempAppointmentData[0] = JSON.parse(JSON.stringify(tempAppointmentData[index]));
+						tempAppointmentData[index] = JSON.parse(JSON.stringify(temp));
+						setAppointmentData(tempAppointmentData)
+					} else {
+						setAppointmentData(transformedData)
+					}
+					setLoading(false)
+				})
 			} catch(error){
-				console.log(error.message)
+				console.log(error)
 			}
 		}
+
 		useEffect(() => {
 			getAppointments()
 			setDoctorStatus(!appointmentData.map(element => element.doctor_id).includes(loginData.doctor_id))
-	}, [])
+		}, [])
+
 	useEffect(() => {
 		searchHandler()
 	}, [searchValue])
+
 	const editAppointmentHandler = (id) => {
 			navigate(`/Appointments/Edit/${id}`)
 	}
-	console.log(appointmentData)
-const sendAppointmentInfo = (id) => {
-
-}
+console.log("edited: ", edited)
 const successNotification = () => {
 	notification["success"]({
 		message: 'SUCCESSFULL',
@@ -61,7 +80,8 @@ const successNotification = () => {
 			`You have just successfully make new appointment.!!`,
 	});
 };
-console.log("doctor status : ", doctorStatus)
+
+
 const saveNotification = () => {
 	notification["success"]({
 		message: 'SUCCESSFULL',
@@ -69,6 +89,14 @@ const saveNotification = () => {
 			`Successfully change!!`,
 	});
 };
+const yetEditedNotification = () => {
+	notification["error"]({
+		message: 'Not Successful',
+		description:
+			`You can not send bill until update appointment.!!`,
+	});
+};
+
 	const columns = [
 		{
 			title : "Appointment ID",
@@ -83,9 +111,9 @@ const saveNotification = () => {
 			align : "center"
 		},
 		{
-			title : "Expected Time",
-			key : "expected_time",
-			dataIndex : "expected_time",
+			title : "End Time",
+			key : "end_time",
+			dataIndex : "end_time",
 			align : "center"
 		},
 		{
@@ -122,12 +150,11 @@ const saveNotification = () => {
       key: 'action',
       width: '10%',
 			align : "center",
-      render: (_text, record) => (loginData.role === 'doctor' && loginData.doctor_id === record.doctor_id) && !record.end_time ? (
-        <Space size="middle">
+      render: (_text, record) => (sessionStorage.getItem('role') === 'doctor' && sessionStorage.getItem('doctor_id') === record.doctor_id) ? 
+         (record.end_time === null ? (<Space size="middle">
           <EditTwoTone
             id={record.appointment_id}
             onClick={(event) => {
-							console.log(record.appointment_id)
 							event.stopPropagation()
               editAppointmentHandler(record.appointment_id)
             }}
@@ -143,17 +170,23 @@ const saveNotification = () => {
 								setSelectedPatientId(record.patient_id)
 								const status_insurance = appointmentData.find(element => element.patient_id === record.patient_id).status_of_insurance
 								setStatus_of_insurance(status_insurance)
-								setIsBillModalVisible(true)
+								if (localStorage.getItem('edited') === 'true') {
+									setIsBillModalVisible(true)
+								} else {
+									yetEditedNotification()
+								}
 						}}
 									/>
-        </Space>
+        </Space> ) : 
+				<Tag color="orange">
+					Was sent
+				</Tag>
       ) : 						
 			<Tag color="red">
 					Not allow
 			</Tag>
     },
 	]
-	console.log("status : ", status_of_insurance)
 	const searchTypeHandler = (value) => {
     setSearchType(value)
 	}
@@ -164,6 +197,7 @@ const saveNotification = () => {
   const toggleBillModalHandler = (state) => {
 		setIsBillModalVisible(state)
 	}
+	console.log("loginData: ", loginData)
   const searchHandler = async () => {
 		  
 			if(searchType === 'appointment_id') {
@@ -171,12 +205,26 @@ const saveNotification = () => {
 				try {
 					let response 
 					if(searchValue.trim().length > 0){
-						 response = await fetch(`https://hospital-project-api.herokuapp.com/api/appointments/appointment_id/${searchValue}`)
+						 response = await fetch(`https://hospital-project-api.herokuapp.com/api/appointments/appointment_id/${searchValue}`,{mode : 'cors'})
 					} else {
-						 response = await fetch(`https://hospital-project-api.herokuapp.com/api/appointments`)
+						 response = await fetch(`https://hospital-project-api.herokuapp.com/api/appointments`,{mode : 'cors'})
 					}					
 					const jsonData = await response.json()
-					setAppointmentData(jsonData)
+					const transformedData =  await jsonData.map(appointment => {
+						return {...appointment, 
+							diagnosis: (appointment.diagnosis !== null ? appointment.diagnosis : "in progess"),
+						}
+					})
+					const index = transformedData.findIndex(element => element.doctor_id === sessionStorage.getItem('doctor_id'))
+					if(index >= 0) {
+						tempAppointmentData = transformedData.slice()
+						let temp  = JSON.parse(JSON.stringify(tempAppointmentData[0]));
+						tempAppointmentData[0] = JSON.parse(JSON.stringify(tempAppointmentData[index]));
+						tempAppointmentData[index] = JSON.parse(JSON.stringify(temp));
+						setAppointmentData(tempAppointmentData)
+					} else {
+						setAppointmentData(transformedData)
+					}
 					setLoading(false)
 				} catch(error){
 					console.log(error.message)
@@ -186,12 +234,26 @@ const saveNotification = () => {
 				try {
 					let response 
 					if(searchValue.trim().length > 0){
-						response = await fetch(`https://hospital-project-api.herokuapp.com/api/appointments/doctor_id/${searchValue}`)
+						response = await fetch(`https://hospital-project-api.herokuapp.com/api/appointments/doctor_id/${searchValue}`,{mode : 'cors'})
 				 } else {
-						response = await fetch(`https://hospital-project-api.herokuapp.com/api/appointments`)
+						response = await fetch(`https://hospital-project-api.herokuapp.com/api/appointments`,{mode : 'cors'})
 				 }	
 					const jsonData = await response.json()
-					setAppointmentData(jsonData)
+					const transformedData =  await jsonData.map(appointment => {
+						return {...appointment, 
+							diagnosis: (appointment.diagnosis !== null ? appointment.diagnosis : "in progess"),
+						}
+					})
+					const index = transformedData.findIndex(element => element.doctor_id === sessionStorage.getItem('doctor_id'))
+					if(index >= 0) {
+						tempAppointmentData = transformedData.slice()
+						let temp  = JSON.parse(JSON.stringify(tempAppointmentData[0]));
+						tempAppointmentData[0] = JSON.parse(JSON.stringify(tempAppointmentData[index]));
+						tempAppointmentData[index] = JSON.parse(JSON.stringify(temp));
+						setAppointmentData(tempAppointmentData)
+					} else {
+						setAppointmentData(transformedData)
+					}
 					setLoading(false)
 				} catch(error){
 					console.log(error.message)
@@ -201,54 +263,85 @@ const saveNotification = () => {
 				try {
 					let response 
 					if(searchValue.trim().length > 0){
-						response = await fetch(`https://hospital-project-api.herokuapp.com/api/appointments/specialty/${searchValue}`, {mode : 'cors'})
+						response = await fetch(`https://hospital-project-api.herokuapp.com/api/appointments/specialty/${searchValue}`,{mode : 'cors'})
 				 } else {
-						response = await fetch(`https://hospital-project-api.herokuapp.com/api/appointments`, {mode : 'cors'})
+						response = await fetch(`https://hospital-project-api.herokuapp.com/api/appointments`,{mode : 'cors'})
 				 }	
 					const jsonData = await response.json()
-					setAppointmentData(jsonData)
+					const transformedData =  await jsonData.map(appointment => {
+						return {...appointment, 
+							diagnosis: (appointment.diagnosis !== null ? appointment.diagnosis : "in progess"),
+						}
+					})
+					const index = transformedData.findIndex(element => element.doctor_id === sessionStorage.getItem('doctor_id'))
+					if(index >= 0) {
+						tempAppointmentData = transformedData.slice()
+						let temp  = JSON.parse(JSON.stringify(tempAppointmentData[0]));
+						tempAppointmentData[0] = JSON.parse(JSON.stringify(tempAppointmentData[index]));
+						tempAppointmentData[index] = JSON.parse(JSON.stringify(temp));
+						setAppointmentData(tempAppointmentData)
+					} else {
+						setAppointmentData(transformedData)
+					}
 					setLoading(false)
 				} catch(error){
-					console.log(error.message)
+					console.log(error)
 				}
 			}
 	}
+	// const  swapArrayElements = (arr, indexA, indexB) => {
+	// 	let temp  = JSON.parse(JSON.stringify(arr[indexA]));
+	// 	arr[indexA] = JSON.parse(JSON.stringify(arr[indexB]));
+	// 	arr[indexB] = JSON.parse(JSON.stringify(temp));
+	// };
 const filterMyAppointment = async () => {
 	setLoading(true)
 		try {
-				const response = await fetch(`https://hospital-project-api.herokuapp.com/api/appointments/doctor_id/${loginData.doctor_id}`, {mode : 'cors'})
-				const jsonData = await response.json()
-				setAppointmentData(jsonData)
-				setLoading(false)
+			  axios(`${baseUrl}/appointments/doctor_id/${sessionStorage.getItem('doctor_id')}`).then(response => {
+					const transformedData =   response.data.map(appointment => {
+						return {...appointment, 
+							diagnosis: (appointment.diagnosis !== null ? appointment.diagnosis : "in progess"),
+						}
+					})
+					const index = transformedData.findIndex(element => element.end_time === null)
+					if(index >= 0) {
+						tempAppointmentData = transformedData.slice()
+						let temp  = JSON.parse(JSON.stringify(tempAppointmentData[0]));
+						tempAppointmentData[0] = JSON.parse(JSON.stringify(tempAppointmentData[index]));
+						tempAppointmentData[index] = JSON.parse(JSON.stringify(temp));
+						setAppointmentData(tempAppointmentData)
+					} else {
+						setAppointmentData(transformedData)
+					}
+					setLoading(false)
+				})
 		}catch(error){
-				console.log(error.message)
+				console.log(error)
 		}
 }
 const addAppointmentHandler = async () => {
 	try {
-		console.log('runs')
-		console.log("room_id:", loginData.room_id)
-			let response = await fetch(`https://hospital-project-api.herokuapp.com/api/registrations/${loginData.room_id}`,{mode: 'cors'})
-			const jsonData = await response.json()
-			console.log('json : ', jsonData)
-			// appointment_id, doctor_id, patient_id, specialty_id, room_id, start_time
-			const body = {
-					appointment_id : `${loginData.doctor_id.slice(-2)}${jsonData.patient_id.slice(-2)}${new Date().toISOString().split('T')[0].slice(-5).replace('-', '')}`,
-					doctor_id : loginData.doctor_id,
-					patient_id : jsonData.patient_id,
-					specialty_id : jsonData.specialty_id,
-					room_id : loginData.room_id,
-					start_time : new Date().toLocaleString()
-			}
-			response = await fetch('https://hospital-project-api.herokuapp.com/api/appointments', {
-				method : "POST",
-				headers : {"Content-Type" : "application/json"},
-				body : JSON.stringify(body),
-				mode: 'cors'			
+			axios(`${baseUrl}/registrations/${sessionStorage.getItem('room_id')}`).then(response => {
+				const body = {
+						appointment_id : `${loginData.doctor_id.slice(-2)}${response.data.patient_id.slice(-2)}${new Date().toISOString().split('T')[0].slice(-5).replace('-', '')}`,
+						doctor_id : loginData.doctor_id,
+						patient_id : response.data.patient_id,
+						specialty_id : response.data.specialty_id,
+						room_id : loginData.room_id,
+						start_time : new Date().toLocaleString()
+				}
+				axios.post(`${baseUrl}/appointments`, body)
+				.then(response => {
+					console.log(response)
+				}).catch(error => {
+					console.log(error)
+
+				})
+				localStorage.removeItem('edited')
+				successNotification()
 			})
-			successNotification()
 	}catch(error) {
-		console.log(error.message)
+		console.log(error)
 	}
 }
 	return (
