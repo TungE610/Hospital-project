@@ -15,7 +15,9 @@ const corsOptions ={
 	optionSuccessStatus:200,
 }
 app.use(cors(corsOptions))
+app.use(bodyParser.json())
 app.use(express.json())
+app.use(express.text())
 
 
 const users = []
@@ -33,7 +35,7 @@ app.post('/api/users', async (req,res) => {
 		}
 		res.status(201).send()
 	}catch(error){
-		console.log(error.message)
+		console.log(error)
 	}
 })
 
@@ -66,15 +68,16 @@ app.post('/api/users', async (req,res) => {
 			users.push(user)
 
 		}catch(error){
-			console.log(error.message)
+			console.log(error)
 		}
 	})
 
 
 app.post('/api/users/login', async (req,res) => {
+
 	const user = users.find(user => user.email === req.body.email)
-	console.log("user", user)
 	if(user == null ) {
+		console.log("fails")
 		return res.status(401).send('Cant not find user')
 	} 
 	try {
@@ -102,7 +105,7 @@ app.post('/api/patients', async (req, res) => {
 		const newPatient = await pool.query('INSERT INTO patient (patient_id, name, dob, age, sex, address, phone_number, status_of_insurance, medical_history, citizen_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)', [patient_id, patient_name, dob, age, sex, address,phone_number,status_of_insurance, medical_history,citizen_id ])
 		res.json(newPatient)
 	}catch(error) {
-		console.log(error.message)
+		console.log(error)
 	}
 })
 
@@ -110,6 +113,7 @@ app.post('/api/patients', async (req, res) => {
 
 app.get('/api/doctors', async (req, res) => {
 	try {
+		console.log("get doctors")
 		const allDoctors = await pool.query('SELECT doctor_id, doctor_name, age, status,room_id, specialty.specialty FROM doctor, specialty WHERE doctor.specialty_id = specialty.specialty_id');
 		res.json(allDoctors.rows)
 	}catch(error) {
@@ -203,8 +207,8 @@ app.get('/api/rooms/:roomId', async (req, res) => {
 
 app.post('/api/registrations', async(req, res) => {
 	try {
-		const { specialty_id, patient_id, registration_time, expected_time ,room_id} = req.body;
-		const newRegistration = await pool.query('INSERT INTO registration (specialty_id, patient_id, registration_time, expected_time, room_id) VALUES ($1, $2, $3, $4, $5)', [specialty_id, patient_id, registration_time, expected_time, room_id])
+		const { specialty_id, patient_id, registration_time, expected_time ,room_id, status} = req.body;
+		const newRegistration = await pool.query('INSERT INTO registration (specialty_id, patient_id, registration_time, expected_time, room_id, status) VALUES ($1, $2, $3, $4, $5, $6)', [specialty_id, patient_id, registration_time, expected_time, room_id, status])
 		res.json(newRegistration)
 	}catch(error) {
 		console.log(error.message)
@@ -226,7 +230,7 @@ app.get('/api/registrations/:room_id', async(req, res) => {
 ////get all appointment
 app.get('/api/appointments', async (req, res) => {
 	try {
-		const allAppointments = await pool.query('SELECT appointment.appointment_id,appointment.start_time, appointment.expected_time, diagnosis ,specialty.specialty,room_id,appointment.patient_id,patient.status_of_insurance, doctor_id FROM appointment,patient,specialty WHERE appointment.patient_id = patient.patient_id AND appointment.specialty_id = specialty.specialty_id AND appointment.end_time IS NULL');
+		const allAppointments = await pool.query('SELECT appointment.appointment_id,appointment.start_time, appointment.end_time, diagnosis ,specialty.specialty,room_id,appointment.patient_id,patient.status_of_insurance, doctor_id FROM appointment,patient,specialty WHERE appointment.patient_id = patient.patient_id AND appointment.specialty_id = specialty.specialty_id AND appointment.end_time IS NULL');
 		res.json(allAppointments.rows)
 	}catch(error) {
 		console.log(error.message)
@@ -241,26 +245,28 @@ app.post('/api/appointments', async(req, res) => {
 		const newAppointment = await pool.query('INSERT INTO appointment (appointment_id, doctor_id, patient_id,specialty_id,room_id, start_time) VALUES ($1, $2, $3, $4, $5, $6)', [appointment_id, doctor_id, patient_id,specialty_id, room_id, start_time])
 		res.json(newAppointment)
 	}catch(error) {
-		console.log(error.message)
+		console.log(error)
 	}
 })
 
 app.get('/api/appointments/:appointment_id', async (req, res) => {
 	try {
 		const { appointment_id } = req.params
-		const appointments = await pool.query('SELECT appointment.appointment_id,appointment.start_time, appointment.expected_time, diagnosis ,specialty.specialty,room_id,patient_id, doctor_id FROM appointment,specialty WHERE appointment.specialty_id = specialty.specialty_id AND appointment.appointment_id = $1',[appointment_id])
+		const appointments = await pool.query('SELECT appointment.appointment_id,appointment.start_time, diagnosis ,specialty.specialty,room_id,patient_id, doctor_id FROM appointment,specialty WHERE appointment.specialty_id = specialty.specialty_id AND appointment.appointment_id = $1',[appointment_id])
+		console.log("reuslt: ",appointments.rows[0] )
 		res.json(appointments.rows[0])
+
 	}catch(error){
-		console.log(error.message)
+		console.log(error)
 	}
 })
 app.post('/api/appointments/:appointment_id', async (req, res) => {
 	try {
 		const { appointment_id } = req.params
-		const appointments = await pool.query('UPDATE appointment SET diagnosis = $1, expected_time = $2 WHERE appointment_id = $3',[req.body.diagnosis,req.body.expected_time, appointment_id])
+		const appointments = await pool.query('UPDATE appointment SET diagnosis = $1 WHERE appointment_id = $2',[req.body.diagnosis, appointment_id])
 		res.json(appointments)
 	}catch(error){
-		console.log("100",error.message)
+		console.log(error)
 	}
 })
 
@@ -293,7 +299,7 @@ app.get('/api/appointments/:column/:value', async (req, res) => {
 	if(column === 'appointment_id'){
 		try {
 			const newValue = '%' + value + '%'
-			const appointments = await pool.query('SELECT appointment.appointment_id,appointment.start_time, appointment.expected_time, diagnosis ,specialty.specialty,room_id,patient_id, doctor_id FROM appointment,specialty WHERE appointment.specialty_id = specialty.specialty_id AND appointment_id LIKE $1', [newValue]);
+			const appointments = await pool.query('SELECT appointment.appointment_id,appointment.start_time, appointment.end_time, diagnosis ,specialty.specialty,room_id,patient_id, doctor_id FROM appointment,specialty WHERE appointment.specialty_id = specialty.specialty_id AND appointment_id LIKE $1', [newValue]);
 			res.json(appointments.rows)
 		}catch(error) {
 			console.log(error.message)
@@ -301,7 +307,7 @@ app.get('/api/appointments/:column/:value', async (req, res) => {
 	} else if(column === 'specialty') {
 		try {
 				const newValue = '%' + value + '%'
-				const appoinments = await pool.query('SELECT appointment.appointment_id,appointment.start_time, appointment.expected_time, diagnosis ,specialty.specialty,room_id,patient_id, doctor_id FROM appointment,specialty WHERE appointment.specialty_id = specialty.specialty_id AND specialty LIKE $1',[newValue]);
+				const appoinments = await pool.query('SELECT appointment.appointment_id,appointment.start_time, appointment.end_time, diagnosis ,specialty.specialty,room_id,patient_id, doctor_id FROM appointment,specialty WHERE appointment.specialty_id = specialty.specialty_id AND specialty LIKE $1',[newValue]);
 				res.json(appoinments.rows)
 		}catch(error) {
 			console.log(error.message)
@@ -309,7 +315,7 @@ app.get('/api/appointments/:column/:value', async (req, res) => {
 	} else {
 		try {
 			const newValue = '%' + value + '%'
-			const appoinments = await pool.query('SELECT appointment.appointment_id,appointment.start_time, appointment.expected_time, diagnosis ,specialty.specialty,room_id,patient_id, doctor_id, end_time FROM appointment,specialty WHERE appointment.specialty_id = specialty.specialty_id AND appointment.doctor_id LIKE $1',[newValue]);
+			const appoinments = await pool.query('SELECT appointment.appointment_id,appointment.start_time, appointment.end_time, diagnosis ,specialty.specialty,room_id,patient_id, doctor_id FROM appointment,specialty WHERE appointment.specialty_id = specialty.specialty_id AND appointment.doctor_id LIKE $1',[newValue]);
 			res.json(appoinments.rows)
 	}catch(error) {
 		console.log(error.message)
@@ -330,7 +336,7 @@ app.get('/api/room/:id', async(req, res) => {
 app.get('/api/room/min_wait/:specialty_id', async(req, res) => {
 	try {
 		const { specialty_id } = req.params;
-		const minWait = await pool.query("SELECT room_id FROM room WHERE room.specialty_id = $1 ORDER BY num_of_waiting ASC LIMIT 1 ", [specialty_id])
+		const minWait = await pool.query("SELECT room_id, num_of_waiting FROM room WHERE room.specialty_id = $1 ORDER BY num_of_waiting ASC LIMIT 1 ", [specialty_id])
 		res.json(minWait.rows[0])
 	}catch(error) {
 		console.log(error.message)
@@ -341,7 +347,7 @@ app.get('/api/room/min_wait/:specialty_id', async(req, res) => {
 app.get('/api/specialties/:id', async(req, res) => {
 	try {
 		const { id } = req.params;
-		const availableRooms = await pool.query("SELECT room.room_id FROM room, specialty WHERE room.specialty_id = specialty.specialty_id AND specialty.specialty_id = $1 AND room.status = 't'", [id])
+		const availableRooms = await pool.query("SELECT room.room_id, room.num_of_waiting FROM room, specialty WHERE room.specialty_id = specialty.specialty_id AND specialty.specialty_id = $1 AND room.status = 't'", [id])
 		res.json(availableRooms.rows[0])
 	}catch(error) {
 		console.log(error.message)
@@ -363,20 +369,27 @@ app.get('/api/medicals', async(req, res) => {
 
 app.post('/api/bills', async (req, res) => {
 	try {
-		console.log(req.body)
-		const bill = await pool.query('INSERT INTO bill(bill_id, appointment_id, patient_id, examination_fee, medicine_fee, discounted_charges,total_charges) VALUES ($1, $2, $3, $4, $5, $6, $7)',[req.body.bill_id, req.body.appointment_id, req.body.patient_id, req.body.examination_fee, req.body.medicine_fee, req.body.discounted_charges, req.body.total_charges])
+		console.log(req)
+		const { bill_id, appointment_id, patient_id, examination_fee, medicine_fee, discounted_charges, total_charges, date_time } = req.body
+		const bill = await pool.query('INSERT INTO bill(bill_id, appointment_id, patient_id, examination_fee, medicine_fee, discounted_charges, total_charges, date_time) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)',[bill_id, appointment_id, patient_id, examination_fee, medicine_fee, discounted_charges, total_charges, date_time])
 		res.json(bill)
 	}catch(error){
-		console.log(error.message)
+		console.log(error)
 	}
 })
 
 app.post('/api/medicines', async (req, res) => {
 	try {
-		console.log(req.body)
+		console.log(req)
 		const medicine = await pool.query('INSERT INTO medicine(medical_id, bill_id, quantity) VALUES ($1, $2, $3)',[req.body.medical_id, req.body.bill_id,req.body.quantity])
 		res.json(medicine)
 	}catch(error){
-		console.log(error.message)
+		console.log(error)
 	}
 })
+
+
+app.get('/logout',(req,res) => {
+	req.session.destroy();
+	res.redirect('/');
+});
