@@ -25,7 +25,7 @@ const Appointments = (props) => {
 	const [typeSee, setTypeSee] = useState(true)
 	const [sent, setSent] = useState(false)
 	const [edited, setEdited] = useState(false)
-	const baseUrl = 'https://hospital-project-api.herokuapp.com/api'
+	const baseUrl = 'https://hospital-project-api.onrender.com/api'
 
 	const location = useLocation();
 	const navigate = useNavigate();
@@ -205,9 +205,9 @@ const yetEditedNotification = () => {
 				try {
 					let response 
 					if(searchValue.trim().length > 0){
-						 response = await fetch(`https://hospital-project-api.herokuapp.com/api/appointments/appointment_id/${searchValue}`,{mode : 'cors'})
+						 response = await fetch(`https://hospital-project-api.onrender.com/api/appointments/appointment_id/${searchValue}`,{mode : 'cors'})
 					} else {
-						 response = await fetch(`https://hospital-project-api.herokuapp.com/api/appointments`,{mode : 'cors'})
+						 response = await fetch(`https://hospital-project-api.onrender.com/api/appointments`,{mode : 'cors'})
 					}					
 					const jsonData = await response.json()
 					const transformedData =  await jsonData.map(appointment => {
@@ -234,9 +234,9 @@ const yetEditedNotification = () => {
 				try {
 					let response 
 					if(searchValue.trim().length > 0){
-						response = await fetch(`https://hospital-project-api.herokuapp.com/api/appointments/doctor_id/${searchValue}`,{mode : 'cors'})
+						response = await fetch(`https://hospital-project-api.onrender.com/api/appointments/doctor_id/${searchValue}`,{mode : 'cors'})
 				 } else {
-						response = await fetch(`https://hospital-project-api.herokuapp.com/api/appointments`,{mode : 'cors'})
+						response = await fetch(`https://hospital-project-api.onrender.com/api/appointments`,{mode : 'cors'})
 				 }	
 					const jsonData = await response.json()
 					const transformedData =  await jsonData.map(appointment => {
@@ -263,9 +263,9 @@ const yetEditedNotification = () => {
 				try {
 					let response 
 					if(searchValue.trim().length > 0){
-						response = await fetch(`https://hospital-project-api.herokuapp.com/api/appointments/specialty/${searchValue}`,{mode : 'cors'})
+						response = await fetch(`https://hospital-project-api.onrender.com/api/appointments/specialty/${searchValue}`,{mode : 'cors'})
 				 } else {
-						response = await fetch(`https://hospital-project-api.herokuapp.com/api/appointments`,{mode : 'cors'})
+						response = await fetch(`https://hospital-project-api.onrender.com/api/appointments`,{mode : 'cors'})
 				 }	
 					const jsonData = await response.json()
 					const transformedData =  await jsonData.map(appointment => {
@@ -319,31 +319,31 @@ const filterMyAppointment = async () => {
 				console.log(error)
 		}
 }
-const addAppointmentHandler = async () => {
-	try {
-			axios(`${baseUrl}/registrations/${sessionStorage.getItem('room_id')}`).then(response => {
-				const body = {
-						appointment_id : `${loginData.doctor_id.slice(-2)}${response.data.patient_id.slice(-2)}${new Date().toISOString().split('T')[0].slice(-5).replace('-', '')}`,
-						doctor_id : loginData.doctor_id,
-						patient_id : response.data.patient_id,
-						specialty_id : response.data.specialty_id,
-						room_id : loginData.room_id,
-						start_time : new Date().toLocaleString()
-				}
-				axios.post(`${baseUrl}/appointments`, body)
-				.then(response => {
-					console.log(response)
-				}).catch(error => {
-					console.log(error)
+// const addAppointmentHandler = async () => {
+// 	try {
+// 		await	axios(`${baseUrl}/registrations/${sessionStorage.getItem('room_id')}`).then(response => {
+// 				const body = {
+// 						appointment_id : `${sessionStorage.getItem("doctor_id").slice(-2)}${response.data.patient_id.slice(-2)}${new Date().toISOString().split('T')[0].slice(-5).replace('-', '')}`,
+// 						doctor_id : sessionStorage.getItem("doctor_id"),
+// 						patient_id : response.data.patient_id,
+// 						specialty_id : response.data.specialty_id,
+// 						room_id : sessionStorage.getItem("room_id"),
+// 						start_time : new Date().toLocaleString()
+// 				}
+// 				axios.post(`${baseUrl}/appointments`, body)
+// 				.then(response => {
+// 					console.log(response)
+// 				}).catch(error => {
+// 					console.log(error)
 
-				})
-				localStorage.removeItem('edited')
-				successNotification()
-			})
-	}catch(error) {
-		console.log(error)
-	}
-}
+// 				})
+// 				localStorage.removeItem('edited')
+// 				successNotification()
+// 			})
+// 	}catch(error) {
+// 		console.log(error)
+// 	}
+// }
 	return (
 		<div className={styles.doctorsPage}>
 			<RegisterModal isModalVisible={isModalVisible} toggleModal={toggleModalHandler}/>
@@ -354,7 +354,7 @@ const addAppointmentHandler = async () => {
 				<p className={styles.titleText}>APPOINTMENTS</p>
 				<img src={require(`../../assets/appointment.png`)} className={styles.titleLogo}/>
 			</div>
-				<Button onClick={addAppointmentHandler} size="large" style={{backgroundColor : "#B53E5A", color : "#fff", position:"relative", float : 'right', top : '-40px'}}>Next Patient</Button>
+				{/* <Button onClick={addAppointmentHandler} size="large" style={{backgroundColor : "#B53E5A", color : "#fff", position:"relative", float : 'right', top : '-40px'}}>Next Patient</Button> */}
 			<Input.Group  compact style={{
 				width: '40%',
 				position: 'relative',

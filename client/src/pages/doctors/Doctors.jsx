@@ -18,7 +18,7 @@ const Doctors = () => {
 	const [searchType, setSearchType] = useState('doctor_id')
 	const [searchValue, setSearchValue] = useState('')
 	const [loginData, setLoggedIn] = useContext(LogginContext)
-	const baseUrl = 'https://hospital-project-api.herokuapp.com/api'
+	const baseUrl = 'https://hospital-project-api.onrender.com/api'
 	const navigate = useNavigate();
 	const { Option } = Select;
 
@@ -74,7 +74,7 @@ const deletetpl =async  (id) => {
 const deleteTptt = async (id) => {
 	try {
 		console.log(id)
-		const res = await fetch(`https://hospital-project-api.herokuapp.com/api/doctors/delete/${id}`,{
+		const res = await fetch(`https://hospital-project-api.onrender.com/api/doctors/delete/${id}`,{
 			method : "POST",
 			headers : {"Content-Type" : "application/json"},
 			mode: 'cors'
@@ -94,13 +94,13 @@ const saveNotification = () => {
 };
 	const columns = [
 		{
-			title : "Doctor ID",
+			title : "ID",
 			key : "doctor_id",
 			dataIndex : "doctor_id",
 			align : "center"
 		},
 		{
-			title : "Doctor Name",
+			title : "Full Name",
 			key : "doctor_name",
 			dataIndex : "doctor_name",
 			align : "center"
@@ -117,11 +117,11 @@ const saveNotification = () => {
 			dataIndex : "status",
 			filters : [
 				{
-					text: 'True',
+					text: 'Free',
 					value: true,
 				},
 				{
-					text: 'False',
+					text: 'Busy',
 					value: false,
 				},
 			],
@@ -131,13 +131,13 @@ const saveNotification = () => {
 				if (status === false) {
 					return (
 						<Tag key={status} color="red">
-							False
+							Busy
 						</Tag>
 					) 
 				} else {
 					return (
 						<Tag key={status} color="green">
-							True
+							Free
 						</Tag>
 					) 
 				}
@@ -165,7 +165,7 @@ const saveNotification = () => {
 			onFilter: (value, record) => record.specialty === value,
 		},
 		{
-			title : "Room_id",
+			title : "Room",
 			key : "room_id",
 			dataIndex : "room_id",
 			align : "center"

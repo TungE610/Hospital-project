@@ -14,9 +14,9 @@ const Rooms = () => {
   const [roomData, setRoomData] = useState([])
 	const [loading, setLoading] = useState(false);
 	const [isModalVisible, setIsModalVisible] = useState(false)
-	const [searchType, setSearchType] = useState('doctor_id')
+	const [searchType, setSearchType] = useState('room_id')
 	const [searchValue, setSearchValue] = useState('')
-	const baseUrl = 'https://hospital-project-api.herokuapp.com/api'
+	const baseUrl = 'https://hospital-project-api.onrender.com/api'
 	const navigate = useNavigate();
 	const { Option } = Select;
 
@@ -51,7 +51,7 @@ const Rooms = () => {
   };
 	const columns = [
 		{
-			title : "Room ID",
+			title : "ID",
 			key : "room_id",
 			dataIndex : "room_id",
 			align : "center",
@@ -64,11 +64,11 @@ const Rooms = () => {
 			align : "center",
 			filters : [
 				{
-					text: 'True',
+					text: 'Free',
 					value: 't',
 				},
 				{
-					text: 'False',
+					text: 'Busy',
 					value: 'f',
 				},
 			],
@@ -77,13 +77,13 @@ const Rooms = () => {
 				if (status === 'f') {
 					return (
 						<Tag key={status} color="red">
-							False
+							Busy
 						</Tag>
 					) 
 				} else {
 					return (
 						<Tag key={status} color="green">
-							True
+							Free
 						</Tag>
 					) 
 				}
@@ -103,14 +103,12 @@ const Rooms = () => {
 			key : "manager",
 			dataIndex : "manager",
 			align : "center",
-			sorter: true,
 		},
 		{
 			title : "Specialty",
 			key : "specialty",
 			dataIndex : "specialty",
 			align : "center",
-			sorter: true,
 			filters : [
 				{
 					text: 'Tim Mạch',
@@ -156,7 +154,7 @@ const Rooms = () => {
 				} catch(error){
 					console.log(error)
 				}
-			} else {
+			} else if(searchType === 'specialty'){
 				setLoading(true)
 				try {
 					if(searchValue.trim().length > 0){
@@ -173,9 +171,25 @@ const Rooms = () => {
 				} catch(error){
 					console.log(error)
 				}
+			} else {
+				setLoading(true)
+				try {
+					if(searchValue.trim().length > 0){
+						 axios(`${baseUrl}/rooms/manager/${searchValue}`).then(response => {
+							setRoomData(response.data)
+							setLoading(false)
+						})
+					} else {
+						axios(`${baseUrl}/rooms`).then(response => {
+							setRoomData(response.data)
+							setLoading(false)
+						})
+					}							
+				} catch(error){
+					console.log(error)
+				}
 			}
 	}
-	console.log(searchValue)
 	return (
 		<div className={styles.roomsPage}>
 		<RegisterModal isModalVisible={isModalVisible} toggleModal={toggleModalHandler}/>
@@ -197,9 +211,10 @@ const Rooms = () => {
       <Select defaultValue="room_id" onChange={searchTypeHandler}>
         <Option value="specialty">Specialty</Option>
         <Option value="room_id">Room Id</Option>
+        <Option value="manager">Manager</Option>
       </Select>
       <Input
-				placeholder={searchType === 'room_id' ? "Please type Room Id" : "Please type Name"} onChange={getSearchData}
+				placeholder={searchType === 'room_id' ? "Please type Room Id" : (searchType === 'specialty' ? "Please type specialty name" : "Please type manager name")} onChange={getSearchData}
       />
 			<Tooltip title="search">
 				<Button shape="circle" icon={<SearchOutlined />} onClick={searchHandler}/>
