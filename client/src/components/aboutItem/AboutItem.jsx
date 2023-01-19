@@ -1,5 +1,5 @@
-import React from 'react'
-import styles from './AboutItem.module.css'
+import React from 'react';
+import styles from './AboutItem.module.css';
 import { useRef, useEffect, useState } from 'react';
 import { useInView } from 'react-intersection-observer';
 
