@@ -1,9 +1,9 @@
 import React , { useState, useEffect } from "react";
-import axios from 'axios'
-import styles from './Rooms.module.css'
+import axios from 'axios';
+import styles from './Rooms.module.css';
 import ContactRow from "../../components/contactRow/ContactRow";
 import Navbar from "../../components/navbar/Navbar";
-import { Table, Tag, Input, Select,Button, Tooltip } from 'antd'
+import { Table, Tag, Input, Select,Button, Tooltip } from 'antd';
 import RegisterModal from "../../components/registerModal/RegisterModal";
 import { useNavigate } from "react-router-dom";
 import { SearchOutlined } from '@ant-design/icons';
@@ -11,36 +11,39 @@ import NotificationBox from "../../components/notificationBox/Notification";
 
 
 const Rooms = () => {
-  const [roomData, setRoomData] = useState([])
-	const [loading, setLoading] = useState(false);
-	const [isModalVisible, setIsModalVisible] = useState(false)
-	const [searchType, setSearchType] = useState('room_id')
-	const [searchValue, setSearchValue] = useState('')
-	const baseUrl = 'https://hospital-project-api.onrender.com/api'
-	const navigate = useNavigate();
-	const { Option } = Select;
+
+  const [roomData, setRoomData] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [isModalVisible, setIsModalVisible] = useState(false);
+  const [searchType, setSearchType] = useState('room_id');
+  const [searchValue, setSearchValue] = useState('');
+  const navigate = useNavigate();
+  const { Option } = Select;
+  const baseUrl = 'https://hospital-project-api.onrender.com/api';
 
   const getRooms = async () => {
-		  setLoading(true)
-			try {
-				await	axios(`${baseUrl}/rooms`).then(response => {
-					setRoomData(response.data)
-					setLoading(false);
-				})
-			} catch(error){
-				console.log(error)
-			}
-	}
-    useEffect(() => {
+      setLoading(true);
+
+      try {
+        await	axios(`${baseUrl}/rooms`).then(response => {
+          setRoomData(response.data);
+          setLoading(false);
+        })
+
+      } catch(error){
+        console.log(error);
+      }
+  }
+  useEffect(() => {
     getRooms()
-	}, [])
+  }, [])
 
-	useEffect(() => {
-		searchHandler()
-	}, [searchValue])
+  useEffect(() => {
+    searchHandler();
+  }, [searchValue])
 
-	const toggleModalHandler = (state) => {
-		setIsModalVisible(state)
+  const toggleModalHandler = (state) => {
+    setIsModalVisible(state);
   }
   const handleTableChange = (filters, sorter) => {
     getRooms({
@@ -49,192 +52,202 @@ const Rooms = () => {
       ...filters,
     });
   };
-	const columns = [
-		{
-			title : "ID",
-			key : "room_id",
-			dataIndex : "room_id",
-			align : "center",
-			sorter: true,
-		},
-		{
-			title : "Status",
-			key : "status",
-			dataIndex : "status",
-			align : "center",
-			filters : [
-				{
-					text: 'Free',
-					value: 't',
-				},
-				{
-					text: 'Busy',
-					value: 'f',
-				},
-			],
-			onFilter: (value, record) => record.status === value,
-			render : (status) => {
-				if (status === 'f') {
-					return (
-						<Tag key={status} color="red">
-							Busy
-						</Tag>
-					) 
-				} else {
-					return (
-						<Tag key={status} color="green">
-							Free
-						</Tag>
-					) 
-				}
-			}
-		},
-		{
-			title : "Number of Waiting",
-			key : "num_of_waiting",
-			dataIndex : "num_of_waiting",
-			align : "center",
-			width : 200,
-			sorter: (a, b) => a.num_of_waiting - b.num_of_waiting,
-			sortDirections: ['ascend'],
-		},
-		{
-			title : "Manager",
-			key : "manager",
-			dataIndex : "manager",
-			align : "center",
-		},
-		{
-			title : "Specialty",
-			key : "specialty",
-			dataIndex : "specialty",
-			align : "center",
-			filters : [
-				{
-					text: 'Tim Mạch',
-					value: 'Tim Mạch',
-				},
-				{
-					text: 'Tai Mũi Họng',
-					value: 'Tai Mũi Họng',
-				},
-				{
-					text: 'Mắt',
-					value: 'Mắt',
-				},
-			],
-			onFilter: (value, record) => record.specialty === value,
-		},
-	]
-	const searchTypeHandler = (value) => {
-    setSearchType(value)
-	}
+
+  const columns = [
+    {
+      title : "ID",
+      key : "room_id",
+      dataIndex : "room_id",
+      align : "center",
+      sorter: true,
+    },
+    {
+      title : "Status",
+      key : "status",
+      dataIndex : "status",
+      align : "center",
+      filters : [
+        {
+          text: 'Free',
+          value: 't',
+        },
+        {
+          text: 'Busy',
+          value: 'f',
+        },
+      ],
+      onFilter: (value, record) => record.status === value,
+      render : (status) => {
+        if (status === 'f') {
+          return (
+            <Tag key={status} color="red">
+              Busy
+            </Tag>
+          ) 
+        } else {
+          return (
+            <Tag key={status} color="green">
+              Free
+            </Tag>
+          ) 
+        }
+      }
+    },
+    {
+      title : "Number of Waiting",
+      key : "num_of_waiting",
+      dataIndex : "num_of_waiting",
+      align : "center",
+      width : 200,
+      sorter: (a, b) => a.num_of_waiting - b.num_of_waiting,
+      sortDirections: ['ascend'],
+    },
+    {
+      title : "Manager",
+      key : "manager",
+      dataIndex : "manager",
+      align : "center",
+    },
+    {
+      title : "Specialty",
+      key : "specialty",
+      dataIndex : "specialty",
+      align : "center",
+      filters : [
+        {
+          text: 'Tim Mạch',
+          value: 'Tim Mạch',
+        },
+        {
+          text: 'Tai Mũi Họng',
+          value: 'Tai Mũi Họng',
+        },
+        {
+          text: 'Mắt',
+          value: 'Mắt',
+        },
+      ],
+      onFilter: (value, record) => record.specialty === value,
+    },
+  ]
+  const searchTypeHandler = (value) => {
+    setSearchType(value);
+  }
 
   const getSearchData = (e) => {
-		setSearchValue(e.target.value)
-	}
-	
+    setSearchValue(e.target.value);
+  }
+  
   const searchHandler = async () => {
-		  
-			if(searchType === 'room_id') {
-				setLoading(true)
-				try {
-					if(searchValue.trim().length > 0){
-						 axios(`${baseUrl}/rooms/room_id/${searchValue}`).then(response => {
-							setRoomData(response.data)
-							setLoading(false)
-						})
+      
+      if(searchType === 'room_id') {
+        setLoading(true);
 
-					} else {
-						 axios(`${baseUrl}/rooms`).then(response => {
-							 setRoomData(response.data)
-							 setLoading(false)
-						 })
-					}			
-				} catch(error){
-					console.log(error)
-				}
-			} else if(searchType === 'specialty'){
-				setLoading(true)
-				try {
-					if(searchValue.trim().length > 0){
-						 axios(`${baseUrl}/rooms/specialty/${searchValue}`).then(response => {
-							setRoomData(response.data)
-							setLoading(false)
-						})
-					} else {
-						axios(`${baseUrl}/rooms`).then(response => {
-							setRoomData(response.data)
-							setLoading(false)
-						})
-					}							
-				} catch(error){
-					console.log(error)
-				}
-			} else {
-				setLoading(true)
-				try {
-					if(searchValue.trim().length > 0){
-						 axios(`${baseUrl}/rooms/manager/${searchValue}`).then(response => {
-							setRoomData(response.data)
-							setLoading(false)
-						})
-					} else {
-						axios(`${baseUrl}/rooms`).then(response => {
-							setRoomData(response.data)
-							setLoading(false)
-						})
-					}							
-				} catch(error){
-					console.log(error)
-				}
-			}
-	}
-	return (
-		<div className={styles.roomsPage}>
-		<RegisterModal isModalVisible={isModalVisible} toggleModal={toggleModalHandler}/>
-		<ContactRow />
-		<Navbar openModal={toggleModalHandler}/>
-		<div className={styles.pageTitle}>
-			<p className={styles.titleText}>ROOMS</p>
-			<img src={require(`../../assets/dining-table.png`)} className={styles.titleLogo}/>
-		</div>
-		<Input.Group  compact style={{
-				          width: '30%',
-									position: 'relative',
-									float : 'right',
-									display :'flex',
-									right : '10px',
-									marginBottom :'30px',
-									marginRight : '0'
-			}}>
+        try {
+          if(searchValue.trim().length > 0){
+             axios(`${baseUrl}/rooms/room_id/${searchValue}`).then(response => {
+              setRoomData(response.data)
+              setLoading(false)
+            })
+
+        } else {
+             axios(`${baseUrl}/rooms`).then(response => {
+               setRoomData(response.data);
+               setLoading(false);
+            })
+          }			
+        } catch(error){
+          console.log(error);
+        }
+      } else if(searchType === 'specialty'){
+        setLoading(true);
+
+        try {
+          if(searchValue.trim().length > 0){
+             axios(`${baseUrl}/rooms/specialty/${searchValue}`).then(response => {
+              setRoomData(response.data);
+              setLoading(false);
+            })
+
+          } else {
+            axios(`${baseUrl}/rooms`).then(response => {
+              setRoomData(response.data);
+              setLoading(false);
+            })
+          }							
+        } catch(error){
+          console.log(error);
+        }
+      } else {
+        setLoading(true);
+
+        try {
+          if(searchValue.trim().length > 0){
+
+             axios(`${baseUrl}/rooms/manager/${searchValue}`).then(response => {
+              setRoomData(response.data);
+              setLoading(false);
+            })
+
+          } else {
+
+            axios(`${baseUrl}/rooms`).then(response => {
+              setRoomData(response.data);
+              setLoading(false);
+            })
+
+          }							
+        } catch(error){
+          console.log(error);
+        }
+      }
+  }
+  return (
+    <div className={styles.roomsPage}>
+    <RegisterModal isModalVisible={isModalVisible} toggleModal={toggleModalHandler}/>
+    <ContactRow />
+    <Navbar openModal={toggleModalHandler}/>
+    <div className={styles.pageTitle}>
+      <p className={styles.titleText}>ROOMS</p>
+      <img src={require(`../../assets/dining-table.png`)} className={styles.titleLogo}/>
+    </div>
+    <Input.Group  compact style={{
+                  width: '30%',
+                  position: 'relative',
+                  float : 'right',
+                  display :'flex',
+                  right : '10px',
+                  marginBottom :'30px',
+                  marginRight : '0'
+      }}>
       <Select defaultValue="room_id" onChange={searchTypeHandler}>
         <Option value="specialty">Specialty</Option>
         <Option value="room_id">Room Id</Option>
         <Option value="manager">Manager</Option>
       </Select>
       <Input
-				placeholder={searchType === 'room_id' ? "Please type Room Id" : (searchType === 'specialty' ? "Please type specialty name" : "Please type manager name")} onChange={getSearchData}
+        placeholder={searchType === 'room_id' ? "Please type Room Id" : (searchType === 'specialty' ? "Please type specialty name" : "Please type manager name")} onChange={getSearchData}
       />
-			<Tooltip title="search">
-				<Button shape="circle" icon={<SearchOutlined />} onClick={searchHandler}/>
-			</Tooltip>    
-	  </Input.Group>
-			<Table 
-				bordered 
-				size="middle" 
-				columns={columns} 
-				dataSource={roomData} 
-				onChange={handleTableChange}  
-				loading={loading}
-			  onRow={(record) => ({
+      <Tooltip title="search">
+        <Button shape="circle" icon={<SearchOutlined />} onClick={searchHandler}/>
+      </Tooltip>    
+    </Input.Group>
+      <Table 
+        bordered 
+        size="middle" 
+        columns={columns} 
+        dataSource={roomData} 
+        onChange={handleTableChange}  
+        loading={loading}
+        onRow={(record) => ({
           onClick: () => {
-							navigate(`/Rooms/${record.room_id}`);
+              navigate(`/Rooms/${record.room_id}`);
             },
           })}/>
-					<NotificationBox />
-	</div>
-	)
+          <NotificationBox />
+  </div>
+  )
 }
 
-export default Rooms
+export default Rooms;
+
