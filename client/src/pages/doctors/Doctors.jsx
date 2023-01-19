@@ -1,180 +1,196 @@
 import {React, useState, useEffect, useContext}from "react";
-import axios from 'axios'
-import styles from "./Doctors.module.css"
+import axios from 'axios';
+import styles from "./Doctors.module.css";
 import ContactRow from "../../components/contactRow/ContactRow";
 import Navbar from "../../components/navbar/Navbar";
-import { Table, Tag, Input,Select,Button, Tooltip, Space,Popconfirm,Modal,notification } from 'antd'
+import { Table, Tag, Input,Select,Button, Tooltip, Space,Popconfirm,Modal,notification } from 'antd';
 import { useNavigate } from "react-router-dom";
 import RegisterModal from "../../components/registerModal/RegisterModal";
-import { SearchOutlined, EditTwoTone, DeleteTwoTone, ExclamationCircleOutlined } from '@ant-design/icons'
-import LogginContext from '../../components/accountBox/LogginContext'
+import { SearchOutlined, EditTwoTone, DeleteTwoTone, ExclamationCircleOutlined } from '@ant-design/icons';
+import LogginContext from '../../components/accountBox/LogginContext';
 import NotificationBox from "../../components/notificationBox/Notification";
 
 const Doctors = () => {
-  const [doctorData, setDoctorData] = useState([])
-	const [isModalVisible, setIsModalVisible] = useState(false)
-	const [loading, setLoading] = useState(false);
-  const [isDeleteModalVisible, setIsDeleteModalVisible] = useState(false);
-	const [searchType, setSearchType] = useState('doctor_id')
-	const [searchValue, setSearchValue] = useState('')
-	const [loginData, setLoggedIn] = useContext(LogginContext)
-	const baseUrl = 'https://hospital-project-api.onrender.com/api'
-	const navigate = useNavigate();
-	const { Option } = Select;
 
-	
+  const [doctorData, setDoctorData] = useState([]);
+  const [isModalVisible, setIsModalVisible] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [isDeleteModalVisible, setIsDeleteModalVisible] = useState(false);
+  const [searchType, setSearchType] = useState('doctor_id');
+  const [searchValue, setSearchValue] = useState('');
+  const [loginData, setLoggedIn] = useContext(LogginContext);
+  const navigate = useNavigate();
+  const { Option } = Select;
+  const baseUrl = 'https://hospital-project-api.onrender.com/api';
+
   const getDoctors = async () => {
-		setLoading(true)
-			try {
-				await axios(`${baseUrl}/doctors`).then(response => {
-					setDoctorData(response.data)
-					setLoading(false)
-				})
-			} catch(error){
-				console.log(error)
-			}
-	}
-  useEffect(() => {
-    getDoctors()
-	}, [])
-	useEffect(() => {
-		searchHandler()
-	}, [searchValue])
-	const toggleModalHandler = (state) => {
-		setIsModalVisible(state)
+    setLoading(true)
+      try {
+        await axios(`${baseUrl}/doctors`).then(response => {
+
+          setDoctorData(response.data);
+          setLoading(false);
+        })
+
+      } catch(error){
+
+        console.log(error);
+      }
   }
-const modelDelete = (id) => {
-	Modal.confirm({
-		title: 'You sure to remove this doctor',
-		icon: <ExclamationCircleOutlined />,
-		content: '',
-		onOk: () => {
-			deletetpl(id)
-		},
-		onCancel: () => { 
-			setIsDeleteModalVisible(false);
-		},
-		centered: true,
-		okText: 'Yes',
-		cancelText: 'No',
-	})
+
+  useEffect(() => {
+    getDoctors();
+  }, [])
+
+  useEffect(() => {
+    searchHandler();
+  }, [searchValue])
+
+  const toggleModalHandler = (state) => {
+    setIsModalVisible(state);
+  }
+
+  const modelDelete = (id) => {
+    Modal.confirm({
+      title: 'You sure to remove this doctor',
+      icon: <ExclamationCircleOutlined />,
+      content: '',
+      onOk: () => {
+        deletetpl(id);
+    },
+      onCancel: () => { 
+        setIsDeleteModalVisible(false);
+      },
+      centered: true,
+      okText: 'Yes',
+      cancelText: 'No',
+  })
 }
 const deletetpl =async  (id) => {
-	try {
-		const newDoctorData = doctorData.filter((x) => x.doctor_id !== id)
-		setDoctorData(newDoctorData)
-    await deleteTptt(id)
-		saveNotification()
-	} catch (error) {
-		if (error.response.status === 404) {
-			navigate('/404')
-		}
-	}
+  try {
+
+    const newDoctorData = doctorData.filter((x) => x.doctor_id !== id);
+
+    setDoctorData(newDoctorData);
+
+    await deleteTptt(id);
+
+    saveNotification();
+
+  } catch (error) {
+
+    if (error.response.status === 404) {
+      navigate('/404');
+    }
+  }
 }
+
 const deleteTptt = async (id) => {
-	try {
-		console.log(id)
-		const res = await fetch(`https://hospital-project-api.onrender.com/api/doctors/delete/${id}`,{
-			method : "POST",
-			headers : {"Content-Type" : "application/json"},
-			mode: 'cors'
-		})
-	}catch (error) {
-		if (error.response.status === 404) {
-			navigate('/404')
-		}
-	}
+  try {
+
+    const res = await fetch(`https://hospital-project-api.onrender.com/api/doctors/delete/${id}`,{
+      method : "POST",
+      headers : {"Content-Type" : "application/json"},
+      mode: 'cors'
+    })
+  }catch (error) {
+    if (error.response.status === 404) {
+
+      navigate('/404');
+    }
+  }
 }
-const saveNotification = () => {
-	notification["success"]({
-		message: 'SUCCESSFULL',
-		description:
-			`Successfully change!!`,
-	});
-};
-	const columns = [
-		{
-			title : "ID",
-			key : "doctor_id",
-			dataIndex : "doctor_id",
-			align : "center"
-		},
-		{
-			title : "Full Name",
-			key : "doctor_name",
-			dataIndex : "doctor_name",
-			align : "center"
-		},
-		{
-			title : "Age",
-			key : "age",
-			dataIndex : "age",
-			align : "center"
-		},
-		{
-			title : "Status",
-			key : "status",
-			dataIndex : "status",
-			filters : [
-				{
-					text: 'Free',
-					value: true,
-				},
-				{
-					text: 'Busy',
-					value: false,
-				},
-			],
-			onFilter: (value, record) => record.status === value,
-			align : "center",			
-			render : (status) => {
-				if (status === false) {
-					return (
-						<Tag key={status} color="red">
-							Busy
-						</Tag>
-					) 
-				} else {
-					return (
-						<Tag key={status} color="green">
-							Free
-						</Tag>
-					) 
-				}
-			}
-		},
-		{
-			title : "Specialty",
-			key : "specialty",
-			dataIndex : "specialty",
-			align : "center",
-			filters : [
-				{
-					text: 'Tim Mạch',
-					value: 'Tim Mạch',
-				},
-				{
-					text: 'Tai Mũi Họng',
-					value: 'Tai Mũi Họng',
-				},
-				{
-					text: 'Mắt',
-					value: 'Mắt',
-				},
-			],
-			onFilter: (value, record) => record.specialty === value,
-		},
-		{
-			title : "Room",
-			key : "room_id",
-			dataIndex : "room_id",
-			align : "center"
-		},
+
+  const saveNotification = () => {
+    notification["success"]({
+      message: 'SUCCESSFULL',
+      description:`Successfully change!!`,
+    });
+  };
+
+  const columns = [
+    {
+      title : "ID",
+      key : "doctor_id",
+      dataIndex : "doctor_id",
+      align : "center"
+    },
+    {
+      title : "Full Name",
+      key : "doctor_name",
+      dataIndex : "doctor_name",
+      align : "center"
+    },
+    {
+      title : "Age",
+      key : "age",
+      dataIndex : "age",
+      align : "center"
+    },
+    {
+      title : "Status",
+      key : "status",
+      dataIndex : "status",
+      filters : [
+        {
+          text: 'Free',
+          value: true,
+        },
+        {
+          text: 'Busy',
+          value: false,
+        },
+      ],
+      onFilter: (value, record) => record.status === value,
+      align : "center",			
+      render : (status) => {
+        if (status === false) {
+          return (
+            <Tag key={status} color="red">
+              Busy
+            </Tag>
+          ) 
+        } else {
+          return (
+            <Tag key={status} color="green">
+              Free
+            </Tag>
+          ) 
+        }
+      }
+    },
+    {
+      title : "Specialty",
+      key : "specialty",
+      dataIndex : "specialty",
+      align : "center",
+      filters : [
+        {
+          text: 'Tim Mạch',
+          value: 'Tim Mạch',
+        },
+        {
+          text: 'Tai Mũi Họng',
+          value: 'Tai Mũi Họng',
+        },
+        {
+          text: 'Mắt',
+          value: 'Mắt',
+        },
+      ],
+      onFilter: (value, record) => record.specialty === value,
+    },
+    {
+      title : "Room",
+      key : "room_id",
+      dataIndex : "room_id",
+      align : "center"
+    },
     {
       title: 'Action',
       key: 'action',
       width: '10%',
-			align : "center",
+      align : "center",
       render: (_text, record) => loginData.role === 'super_admin' && record.status === true ? (
         <Space size="middle">
           <EditTwoTone
@@ -183,114 +199,126 @@ const saveNotification = () => {
               modelDelete(record.doctor_id)
             }}
           />
-					<DeleteTwoTone
-						id={record.doctor_id}
-						onClick={(event) => {
-							event.stopPropagation()
-							modelDelete(record.doctor_id)
-						}}
-					/>
+          <DeleteTwoTone
+            id={record.doctor_id}
+            onClick={(event) => {
+              event.stopPropagation()
+              modelDelete(record.doctor_id)
+            }}
+          />
         </Space>
       ) : 						
-			<Tag color="red">
-					Not allow
-			</Tag>,
+      <Tag color="red">
+          Not allow
+      </Tag>,
     },
-	]
-	const searchTypeHandler = (value) => {
-    setSearchType(value)
-	}
+  ]
+
+  const searchTypeHandler = (value) => {
+    setSearchType(value);
+  }
 
   const getSearchData = (e) => {
-		setSearchValue(e.target.value)
-	}
+    setSearchValue(e.target.value);
+  }
 
   const searchHandler = async () => {
-		  
-			if(searchType === 'doctor_id') {
-				setLoading(true)
-				try {
-					if(searchValue.trim().length > 0){
-						axios(`${baseUrl}/doctors/doctor_id/${searchValue}`).then(response => {
-							setDoctorData(response.data)
-							setLoading(false)
-						})
-					} else {
-						axios(`${baseUrl}/doctors`).then(response => {
-							setDoctorData(response.data)
-							setLoading(false)
-						})
-					}					
-				} catch(error){
-					console.log(error.message)
-				}
-			} else {
-				setLoading(true)
-				try {
-					if(searchValue.trim().length > 0){
-						 axios(`${baseUrl}/doctors/name/${searchValue}`).then(response => {
-							setDoctorData(response.data)
-							setLoading(false)
-						})
-					} else {
-						axios(`${baseUrl}/doctors`).then(response => {
-							setDoctorData(response.data)
-							setLoading(false)
-						})
-					}
-				} catch(error){
-					console.log(error)
-				}
-			}
-	}
-	const onChange = (filters) => {
-		console.log(filters);
-	};
-	return (
-		<div className={styles.doctorsPage}>
-			<RegisterModal isModalVisible={isModalVisible} toggleModal={toggleModalHandler}/>
-			<ContactRow />
-			<Navbar openModal={toggleModalHandler}/>
-			<div className={styles.pageTitle}>
-				<p className={styles.titleText}>DOCTORS</p>
-				<img src={require(`../../assets/doctor.png`)} className={styles.titleLogo}/>
-			</div>
-			<Input.Group  compact style={{
-				          width: '30%',
-									position: 'relative',
-									float : 'right',
-									display :'flex',
-									right : '10px',
-									marginBottom :'30px',
-									marginRight : '0'
-			}}>
+      
+      if(searchType === 'doctor_id') {
+
+        setLoading(true);
+
+        try {
+          if(searchValue.trim().length > 0){
+
+            axios(`${baseUrl}/doctors/doctor_id/${searchValue}`).then(response => {
+              setDoctorData(response.data);
+              setLoading(false);
+            })
+
+          } else {
+            axios(`${baseUrl}/doctors`).then(response => {
+              setDoctorData(response.data);
+              setLoading(false);
+            })
+          }					
+        } catch(error){
+          console.log(error);
+        }
+      } else {
+
+        setLoading(true);
+
+        try {
+          if(searchValue.trim().length > 0){
+
+             axios(`${baseUrl}/doctors/name/${searchValue}`).then(response => {
+              setDoctorData(response.data);
+              setLoading(false);
+            })
+
+          } else {
+
+            axios(`${baseUrl}/doctors`).then(response => {
+              setDoctorData(response.data);
+              setLoading(false);
+            })
+
+          }
+        } catch(error){
+          console.log(error);
+        }
+      }
+  }
+  const onChange = (filters) => {
+    console.log(filters);
+  };
+
+  return (
+    <div className={styles.doctorsPage}>
+      <RegisterModal isModalVisible={isModalVisible} toggleModal={toggleModalHandler}/>
+      <ContactRow />
+      <Navbar openModal={toggleModalHandler}/>
+      <div className={styles.pageTitle}>
+        <p className={styles.titleText}>DOCTORS</p>
+        <img src={require(`../../assets/doctor.png`)} className={styles.titleLogo}/>
+      </div>
+      <Input.Group  compact style={{
+                  width: '30%',
+                  position: 'relative',
+                  float : 'right',
+                  display :'flex',
+                  right : '10px',
+                  marginBottom :'30px',
+                  marginRight : '0'
+      }}>
       <Select defaultValue="doctor_id" onChange={searchTypeHandler}>
         <Option value="name">Name</Option>
         <Option value="doctor_id">Doctor Id</Option>
       </Select>
       <Input
-				placeholder={searchType === 'doctor_id' ? "Please type Doctor Id" : "Please type Name"} onChange={getSearchData}
+        placeholder={searchType === 'doctor_id' ? "Please type Doctor Id" : "Please type Name"} onChange={getSearchData}
       />
-			<Tooltip title="search">
-				<Button shape="circle" icon={<SearchOutlined />} onClick={searchHandler}/>
-			</Tooltip>    
-	  </Input.Group>
-				<Table 
-						bordered 
-				  	size="middle" 
-						columns={columns} 
-						dataSource={doctorData}
-						loading={loading}
-						onChange={onChange}
-						onRow={(record) => ({
-							onClick: () => {
-									navigate(`/Doctors/${record.doctor_id}`);
-								},
-							})}
-				/>
-		<NotificationBox />
-		</div>
-	)
+      <Tooltip title="search">
+        <Button shape="circle" icon={<SearchOutlined />} onClick={searchHandler}/>
+      </Tooltip>    
+    </Input.Group>
+        <Table 
+            bordered 
+            size="middle" 
+            columns={columns} 
+            dataSource={doctorData}
+            loading={loading}
+            onChange={onChange}
+            onRow={(record) => ({
+              onClick: () => {
+                  navigate(`/Doctors/${record.doctor_id}`);
+                },
+              })}
+        />
+    <NotificationBox />
+    </div>
+  )
 }
 
 export default Doctors;
