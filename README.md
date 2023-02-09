@@ -28,7 +28,7 @@ I made this product in myself, but using the database of the database team in wh
 ### Technologies 
 * FrontEnd : HTML, CSS, JavaScript, ReactJS, Figma, ant Design...
 * BackEnd : NodeJS, Express.
-* Deploy : Netlify, Heroku.
+* Deploy : Netlify, Render.
 * Database : PostgreSQL, PLpgSQL.
 ### Database infomations and some webpages 
 ![So_do_thuc_the_lket_cthuc](https://user-images.githubusercontent.com/81414026/182810322-cac5af28-8c71-496d-ac57-821aabdc0d56.png)
